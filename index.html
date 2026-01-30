@@ -1,13 +1,1773 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>LEVEL DEVIL - COR-TECH EDITION</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Fredoka+One&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050510;
+            --primary-color: #ff2d55;
+            --secondary-color: #00f2ff;
+            --accent-color: #ffd700;
+            --text-color: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(ellipse at center, #1a1a3a 0%, #050510 100%);
+        }
+
+        canvas {
+            background-color: transparent;
+            box-shadow: 0 0 100px rgba(0, 242, 255, 0.15), inset 0 0 50px rgba(255, 45, 85, 0.1);
+            max-width: 100%;
+            max-height: 100%;
+            aspect-ratio: 9 / 16;
+            image-rendering: auto;
+            border-radius: 10px;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 100%;
+            max-width: 60.75vh;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            background: rgba(5, 5, 16, 0.85);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--text-color);
+            text-shadow: 0 0 20px var(--primary-color), 0 0 40px var(--primary-color), 4px 4px 0px rgba(0,0,0,0.5);
+            margin-bottom: 1.5rem;
+            line-height: 1.3;
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            letter-spacing: 8px;
+            opacity: 0.7;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #b31d3b 50%, var(--primary-color) 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease infinite;
+            color: white;
+            border: none;
+            padding: 1.2rem 2.5rem;
+            font-size: 1rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 50px;
+            box-shadow: 0 0 30px rgba(255, 45, 85, 0.5), 0 10px 40px rgba(0,0,0,0.3);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .btn:hover {
+            transform: scale(1.1) translateY(-3px);
+            box-shadow: 0 0 50px rgba(255, 45, 85, 0.8), 0 15px 50px rgba(0,0,0,0.4);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        #hud {
+            position: absolute;
+            top: 30px;
+            width: 100%;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            pointer-events: none;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .hud-box {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        #theme-indicator {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6rem;
+            opacity: 0.6;
+            letter-spacing: 2px;
+        }
+
+        #tutorial-badge {
+            position: absolute;
+            top: 115px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #00f2ff, #0088ff);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            animation: pulse 2s infinite;
+        }
+
+        .difficulty-easy {
+            background: linear-gradient(135deg, #44ff44, #00cc00) !important;
+        }
+
+        .difficulty-medium {
+            background: linear-gradient(135deg, #ffaa00, #ff8800) !important;
+        }
+
+        .difficulty-hard {
+            background: linear-gradient(135deg, #ff4444, #cc0000) !important;
+        }
+
+        #demo-indicator {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--secondary-color);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            text-shadow: 0 0 20px var(--secondary-color);
+            animation: pulse 1.5s infinite;
+            letter-spacing: 3px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.5; transform: translateX(-50%) scale(0.95); }
+        }
+
+        .logo-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .logo-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, var(--primary-color) 0%, transparent 70%);
+            opacity: 0.3;
+            animation: logoGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes logoGlow {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.5; }
+        }
+
+        .devil-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        #progress-bar {
+            width: 80%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        #high-scores-container {
+            margin-top: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        #score-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #score-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.7rem;
+        }
+
+        input[type="text"] {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid var(--secondary-color);
+            color: white;
+            padding: 15px 25px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 25px;
+            outline: none;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 30px rgba(255, 45, 85, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--secondary-color);
+        }
+
+        .stat-label {
+            font-size: 0.6rem;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
+
+        .level-complete-anim {
+            animation: levelComplete 0.5s ease;
+        }
+
+        @keyframes levelComplete {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="1080" height="1920"></canvas>
+        
+        <div id="ui-layer">
+            <div id="hud">
+                <div class="hud-box" id="level-display">STAGE 01</div>
+                <div class="hud-box" id="death-display">💀 0</div>
+            </div>
+            <div id="theme-indicator">NEON CITY</div>
+            <div id="tutorial-badge">✨ TUTORIAL - NO TRAPS</div>
+
+            <!-- START SCREEN -->
+            <div id="start-screen" class="screen">
+                <div class="logo-container">
+                    <div class="logo-glow"></div>
+                    <div class="devil-icon">👿</div>
+                </div>
+                <h1>LEVEL<br>DEVIL</h1>
+                <p class="subtitle">Cor-Tech Edition</p>
+                <p style="font-size: 0.7rem; opacity: 0.5; margin-bottom: 2rem;">99 LEVELS • PROGRESSIVE DIFFICULTY</p>
+                <button class="btn" onclick="game.start()">▶ PLAY</button>
+                <p style="font-size: 0.5rem; opacity: 0.3; margin-top: 2rem;">ARROWS/TOUCH TO MOVE • SPACE/TAP TO JUMP</p>
+            </div>
+
+            <!-- GAME OVER SCREEN -->
+            <div id="gameover-screen" class="screen hidden">
+                <div class="devil-icon">🏆</div>
+                <h1>VICTORY!</h1>
+                <p class="subtitle">All 99 levels cleared</p>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value" id="final-deaths">0</div>
+                        <div class="stat-label">TOTAL DEATHS</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="final-time">0:00</div>
+                        <div class="stat-label">TIME</div>
+                    </div>
+                </div>
+                <button class="btn" onclick="game.reset()">🔄 RESTART</button>
+                <div id="high-scores-container">
+                    <p style="color: var(--accent-color); font-size: 0.7rem; margin-bottom: 10px;">🏅 HALL OF FAME</p>
+                    <ul id="score-list"></ul>
+                </div>
+            </div>
+
+            <!-- SCORE INPUT SCREEN -->
+            <div id="score-input-screen" class="screen hidden">
+                <div class="devil-icon">⭐</div>
+                <h1 style="font-size: 1.5rem;">NEW RECORD!</h1>
+                <p class="subtitle">Enter your name</p>
+                <input type="text" id="player-name" maxlength="6" placeholder="PLAYER">
+                <button class="btn" onclick="game.saveScore()">💾 SAVE</button>
+            </div>
+
+            <!-- LEVEL TRANSITION -->
+            <div id="level-transition" class="screen hidden">
+                <h1 id="transition-level">STAGE 01</h1>
+                <p id="transition-theme" class="subtitle">NEON CITY</p>
+                <div id="progress-bar">
+                    <div id="progress-fill" style="width: 1%;"></div>
+                </div>
+            </div>
+
+            <div id="demo-indicator" class="hidden">🤖 AI DEMO MODE</div>
+        </div>
+    </div>
+
+<script>
+/**
+ * LEVEL DEVIL - COR-TECH EDITION
+ * 99 LEVELS WITH THEMED ENVIRONMENTS
+ */
+
+const CANVAS_WIDTH = 1080;
+const CANVAS_HEIGHT = 1920;
+const VIRTUAL_WIDTH = 540;
+const VIRTUAL_HEIGHT = 960;
+const SCALE = CANVAS_WIDTH / VIRTUAL_WIDTH;
+const TOTAL_LEVELS = 99;
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- THEME DEFINITIONS ---
+const THEMES = {
+    neonCity: {
+        name: 'NEON CITY',
+        bg1: '#0a0a1a', bg2: '#1a0a2a',
+        platform: '#00f2ff', platformGlow: '#00f2ff',
+        trap: '#ff2d55', trapGlow: '#ff2d55',
+        player: '#ff2d55', exit: '#ffd700',
+        particle: '#00f2ff', gridColor: 'rgba(0, 242, 255, 0.05)',
+        ambient: ['#ff2d55', '#00f2ff', '#ffd700']
+    },
+    lavaHell: {
+        name: 'LAVA HELL',
+        bg1: '#1a0500', bg2: '#2a0a00',
+        platform: '#ff6600', platformGlow: '#ff3300',
+        trap: '#ff0000', trapGlow: '#ff0000',
+        player: '#ffcc00', exit: '#00ff00',
+        particle: '#ff6600', gridColor: 'rgba(255, 102, 0, 0.05)',
+        ambient: ['#ff0000', '#ff6600', '#ffcc00']
+    },
+    iceWorld: {
+        name: 'ICE WORLD',
+        bg1: '#0a1a2a', bg2: '#0a2a3a',
+        platform: '#88ddff', platformGlow: '#00ccff',
+        trap: '#ff88aa', trapGlow: '#ff4477',
+        player: '#ffffff', exit: '#ffff00',
+        particle: '#aaeeff', gridColor: 'rgba(136, 221, 255, 0.05)',
+        ambient: ['#88ddff', '#ffffff', '#aaeeff']
+    },
+    toxicSwamp: {
+        name: 'TOXIC SWAMP',
+        bg1: '#0a1a0a', bg2: '#1a2a0a',
+        platform: '#44ff44', platformGlow: '#00ff00',
+        trap: '#aa00ff', trapGlow: '#ff00ff',
+        player: '#00ffaa', exit: '#ffff00',
+        particle: '#88ff88', gridColor: 'rgba(68, 255, 68, 0.05)',
+        ambient: ['#44ff44', '#00ffaa', '#aaff00']
+    },
+    darkVoid: {
+        name: 'DARK VOID',
+        bg1: '#050505', bg2: '#0a0a0a',
+        platform: '#8844ff', platformGlow: '#aa66ff',
+        trap: '#ff0044', trapGlow: '#ff0088',
+        player: '#ff44ff', exit: '#00ffff',
+        particle: '#aa88ff', gridColor: 'rgba(136, 68, 255, 0.03)',
+        ambient: ['#8844ff', '#ff44ff', '#4488ff']
+    },
+    sunsetDesert: {
+        name: 'SUNSET DESERT',
+        bg1: '#2a1a0a', bg2: '#3a2010',
+        platform: '#ffaa44', platformGlow: '#ff8800',
+        trap: '#ff4444', trapGlow: '#ff0000',
+        player: '#ff6644', exit: '#44ff88',
+        particle: '#ffcc88', gridColor: 'rgba(255, 170, 68, 0.05)',
+        ambient: ['#ffaa44', '#ff6644', '#ffcc00']
+    },
+    deepOcean: {
+        name: 'DEEP OCEAN',
+        bg1: '#001122', bg2: '#002244',
+        platform: '#0088ff', platformGlow: '#0066cc',
+        trap: '#ff4488', trapGlow: '#ff0066',
+        player: '#00ffcc', exit: '#ffff44',
+        particle: '#44aaff', gridColor: 'rgba(0, 136, 255, 0.05)',
+        ambient: ['#0088ff', '#00ffcc', '#44aaff']
+    },
+    crystalCave: {
+        name: 'CRYSTAL CAVE',
+        bg1: '#1a0a2a', bg2: '#2a1040',
+        platform: '#ff88ff', platformGlow: '#ff44ff',
+        trap: '#44ffff', trapGlow: '#00ffff',
+        player: '#ffaaff', exit: '#aaff44',
+        particle: '#ffccff', gridColor: 'rgba(255, 136, 255, 0.05)',
+        ambient: ['#ff88ff', '#ffaaff', '#ff44aa']
+    },
+    stormyNight: {
+        name: 'STORMY NIGHT',
+        bg1: '#0a0a15', bg2: '#151525',
+        platform: '#6688aa', platformGlow: '#4466aa',
+        trap: '#ffff00', trapGlow: '#ffcc00',
+        player: '#aaccff', exit: '#ff8844',
+        particle: '#88aacc', gridColor: 'rgba(102, 136, 170, 0.05)',
+        ambient: ['#6688aa', '#aaccff', '#ffffff']
+    },
+    techMatrix: {
+        name: 'TECH MATRIX',
+        bg1: '#000a00', bg2: '#001500',
+        platform: '#00ff00', platformGlow: '#00cc00',
+        trap: '#ff0000', trapGlow: '#cc0000',
+        player: '#00ff88', exit: '#ffffff',
+        particle: '#44ff44', gridColor: 'rgba(0, 255, 0, 0.08)',
+        ambient: ['#00ff00', '#00ff88', '#88ff00']
+    },
+    candyLand: {
+        name: 'CANDY LAND',
+        bg1: '#2a1020', bg2: '#3a1530',
+        platform: '#ff66aa', platformGlow: '#ff4488',
+        trap: '#44ddff', trapGlow: '#00ccff',
+        player: '#ffaacc', exit: '#aaff66',
+        particle: '#ffccdd', gridColor: 'rgba(255, 102, 170, 0.05)',
+        ambient: ['#ff66aa', '#ffaacc', '#ff88bb']
+    }
+};
+
+const THEME_ORDER = ['neonCity', 'lavaHell', 'iceWorld', 'toxicSwamp', 'darkVoid', 
+                     'sunsetDesert', 'deepOcean', 'crystalCave', 'stormyNight', 'techMatrix', 'candyLand'];
+
+function getThemeForLevel(level) {
+    const themeIndex = Math.floor((level - 1) / 9) % THEME_ORDER.length;
+    return THEMES[THEME_ORDER[themeIndex]];
+}
+
+// --- AUDIO ENGINE ---
+const AudioEngine = (() => {
+    let ctx = null;
+    const init = () => { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); };
+    
+    const play = (type) => {
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const now = ctx.currentTime;
+        
+        switch(type) {
+            case 'jump':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+                break;
+            case 'death':
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+                break;
+            case 'win':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523, now);
+                gain.gain.setValueAtTime(0.1, now);
+                osc.start(now);
+                setTimeout(() => {
+                    osc.frequency.setValueAtTime(659, ctx.currentTime);
+                }, 100);
+                setTimeout(() => {
+                    osc.frequency.setValueAtTime(784, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
+                }, 200);
+                osc.stop(now + 0.5);
+                break;
+            case 'trap':
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.setValueAtTime(150, now + 0.05);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+                break;
+        }
+    };
+    
+    return { init, play };
+})();
+
+// --- PARTICLE SYSTEM ---
+class Particle {
+    constructor(x, y, color, speed = 1, size = null) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 12 * speed;
+        this.vy = (Math.random() - 0.5) * 12 * speed - 2;
+        this.life = 1.0;
+        this.color = color;
+        this.size = size || Math.random() * 8 + 3;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.3;
+    }
+    
+    update(dt) {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.5;
+        this.life -= dt * 2;
+        this.rotation += this.rotationSpeed;
+    }
+    
+    draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = this.life * 0.8;
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+        ctx.restore();
+    }
+}
+
+class AmbientParticle {
+    constructor(theme) {
+        this.reset(theme, true);
+    }
+    
+    reset(theme, initial = false) {
+        this.x = Math.random() * VIRTUAL_WIDTH;
+        this.y = initial ? Math.random() * VIRTUAL_HEIGHT : -20;
+        this.size = Math.random() * 3 + 1;
+        this.speed = Math.random() * 0.5 + 0.2;
+        this.color = theme.ambient[Math.floor(Math.random() * theme.ambient.length)];
+        this.alpha = Math.random() * 0.3 + 0.1;
+        this.wobble = Math.random() * Math.PI * 2;
+        this.wobbleSpeed = Math.random() * 0.02 + 0.01;
+    }
+    
+    update(dt, theme) {
+        this.y += this.speed;
+        this.wobble += this.wobbleSpeed;
+        this.x += Math.sin(this.wobble) * 0.3;
+        if (this.y > VIRTUAL_HEIGHT + 20) this.reset(theme);
+    }
+    
+    draw(ctx) {
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+// --- LEVEL GENERATOR ---
+// Simplified and progressive difficulty system
+class Level {
+    constructor(id) {
+        this.id = id;
+        this.theme = getThemeForLevel(id);
+        this.platforms = [];
+        this.traps = [];
+        this.movingPlatforms = [];
+        this.exit = { x: 460, y: 100, w: 50, h: 80 };
+        this.spawn = { x: 60, y: 800 };
+        this.generate();
+    }
+    
+    generate() {
+        // Difficulté très progressive
+        // Niveaux 1-20 : Tutoriel (aucun piège)
+        // Niveaux 21-45 : Facile (quelques pièges lents)
+        // Niveaux 46-75 : Moyen
+        // Niveaux 76-99 : Difficile
+        
+        let phase;
+        if (this.id <= 20) phase = 0;
+        else if (this.id <= 45) phase = 1;
+        else if (this.id <= 75) phase = 2;
+        else phase = 3;
+        
+        // 0 → 1 entre le niveau 20 et 99, utilisé uniquement pour affiner la vitesse/quantité des pièges
+        const difficulty = Math.max(0, (this.id - 20) / (TOTAL_LEVELS - 20));
+        
+        // Choix du pattern (les 5 plus simples tournent pour les premiers niveaux)
+        const pattern = this.id <= 20 ? (this.id - 1) % 5 : (this.id - 1) % 8;
+        
+        // Grande plateforme de départ
+        this.platforms.push({ x: 0, y: 870, w: 250, h: 90, type: 'ground' });
+        
+        // Génération du niveau
+        switch(pattern) {
+            case 0: this.patternEasyStairs(difficulty, phase); break;
+            case 1: this.patternSimpleZigzag(difficulty, phase); break;
+            case 2: this.patternWidePlatforms(difficulty, phase); break;
+            case 3: this.patternGentleClimb(difficulty, phase); break;
+            case 4: this.patternSafeSpiral(difficulty, phase); break;
+            case 5: this.patternAlternating(difficulty, phase); break;
+            case 6: this.patternTowerClimb(difficulty, phase); break;
+            case 7: this.patternMixedPath(difficulty, phase); break;
+        }
+        
+        // Ajout des pièges uniquement après le tutoriel, et très progressivement
+        if (phase >= 1) {
+            this.addTraps(difficulty, phase);
+        }
+    }
+    
+    // Pattern 0: Easy stairs - wide platforms, easy jumps
+    patternEasyStairs(diff, phase) {
+        const steps = 5;
+        const platWidth = 150 - phase * 15; // Wider platforms early on
+        
+        for (let i = 0; i < steps; i++) {
+            const x = i % 2 === 0 ? 30 : VIRTUAL_WIDTH - platWidth - 30;
+            const y = 750 - i * 130; // Comfortable jump height
+            this.platforms.push({ x, y, w: platWidth, h: 30, type: 'normal' });
+        }
+        
+        // Exit on last platform
+        const lastX = (steps - 1) % 2 === 0 ? 30 : VIRTUAL_WIDTH - platWidth - 30;
+        this.exit.x = lastX + platWidth/2 - 25;
+        this.exit.y = 750 - (steps - 1) * 130 - 80;
+    }
+    
+    // Pattern 1: Simple zigzag - clear path
+    patternSimpleZigzag(diff, phase) {
+        const platWidth = 160 - phase * 20;
+        
+        for (let i = 0; i < 6; i++) {
+            const x = i % 2 === 0 ? 40 : VIRTUAL_WIDTH - platWidth - 40;
+            const y = 730 - i * 120;
+            this.platforms.push({ x, y, w: platWidth, h: 30, type: 'normal' });
+        }
+        
+        this.exit.x = VIRTUAL_WIDTH - platWidth - 40 + platWidth/2 - 25;
+        this.exit.y = 730 - 5 * 120 - 80;
+    }
+    
+    // Pattern 2: Wide platforms - very easy
+    patternWidePlatforms(diff, phase) {
+        for (let i = 0; i < 5; i++) {
+            const width = VIRTUAL_WIDTH - 80 - i * 40;
+            const x = 40 + i * 20;
+            this.platforms.push({
+                x, y: 750 - i * 150, w: width, h: 35, type: 'normal'
+            });
+        }
+        
+        this.exit.x = VIRTUAL_WIDTH/2 - 25;
+        this.exit.y = 750 - 4 * 150 - 80;
+    }
+    
+    // Pattern 3: Gentle climb - stepping stones
+    patternGentleClimb(diff, phase) {
+        const platWidth = 120;
+        let x = 50;
+        let direction = 1;
+        
+        for (let i = 0; i < 6; i++) {
+            this.platforms.push({
+                x, y: 750 - i * 120, w: platWidth, h: 28, type: 'normal'
+            });
+            
+            x += direction * 100;
+            if (x > VIRTUAL_WIDTH - platWidth - 50 || x < 50) {
+                direction *= -1;
+                x += direction * 100;
+            }
+        }
+        
+        this.exit.x = x + platWidth/2 - 25;
+        this.exit.y = 750 - 5 * 120 - 80;
+    }
+    
+    // Pattern 4: Safe spiral - circular ascent
+    patternSafeSpiral(diff, phase) {
+        const steps = 6;
+        const platWidth = 130;
+        
+        for (let i = 0; i < steps; i++) {
+            const angle = (i / steps) * Math.PI;
+            const x = VIRTUAL_WIDTH/2 + Math.cos(angle) * 120 - platWidth/2;
+            const y = 780 - i * 110;
+            this.platforms.push({ x: Math.max(20, Math.min(VIRTUAL_WIDTH - platWidth - 20, x)), y, w: platWidth, h: 28, type: 'normal' });
+        }
+        
+        this.exit.x = VIRTUAL_WIDTH/2 - 25;
+        this.exit.y = 780 - (steps - 1) * 110 - 80;
+    }
+    
+    // Pattern 5: Alternating sides
+    patternAlternating(diff, phase) {
+        const platWidth = 140 - phase * 15;
+        
+        for (let i = 0; i < 6; i++) {
+            const x = i % 2 === 0 ? 30 : VIRTUAL_WIDTH - platWidth - 30;
+            const y = 740 - i * 125;
+            this.platforms.push({ x, y, w: platWidth, h: 30, type: 'normal' });
+        }
+        
+        this.exit.x = 30 + platWidth/2 - 25;
+        this.exit.y = 740 - 5 * 125 - 80;
+    }
+    
+    // Pattern 6: Tower climb - central column
+    patternTowerClimb(diff, phase) {
+        const centerX = VIRTUAL_WIDTH/2 - 70;
+        const platWidth = 140 - phase * 10;
+        
+        for (let i = 0; i < 7; i++) {
+            const offset = Math.sin(i * 0.7) * (60 + phase * 20);
+            const x = Math.max(20, Math.min(VIRTUAL_WIDTH - platWidth - 20, centerX + offset));
+            this.platforms.push({
+                x, y: 780 - i * 100, w: platWidth, h: 28, type: 'normal'
+            });
+        }
+        
+        this.exit.x = centerX + 35;
+        this.exit.y = 780 - 6 * 100 - 80;
+    }
+    
+    // Pattern 7: Mixed path
+    patternMixedPath(diff, phase) {
+        const platWidth = 130;
+        
+        // Left side platforms
+        this.platforms.push({ x: 30, y: 720, w: platWidth, h: 28, type: 'normal' });
+        this.platforms.push({ x: 30, y: 480, w: platWidth, h: 28, type: 'normal' });
+        
+        // Right side platforms
+        this.platforms.push({ x: VIRTUAL_WIDTH - platWidth - 30, y: 600, w: platWidth, h: 28, type: 'normal' });
+        this.platforms.push({ x: VIRTUAL_WIDTH - platWidth - 30, y: 360, w: platWidth, h: 28, type: 'normal' });
+        
+        // Center platform at top
+        this.platforms.push({ x: VIRTUAL_WIDTH/2 - platWidth/2, y: 240, w: platWidth, h: 28, type: 'normal' });
+        
+        this.exit.x = VIRTUAL_WIDTH/2 - 25;
+        this.exit.y = 160;
+    }
+    
+    addTraps(diff, phase) {
+        // Phase 1 (21-45): très peu de pièges, souvent aucun
+        // Phase 2 (46-75): 1 piège garanti, parfois 2
+        // Phase 3 (76-99): 2 à 3 pièges maximum
+        
+        let trapCount = 0;
+        if (phase === 1) {
+            // 20% de chance au début, jusqu'à ~50% vers la fin de la phase
+            const chance = 0.2 + diff * 0.3;
+            trapCount = Math.random() < chance ? 1 : 0;
+        } else if (phase === 2) {
+            // Au moins un piège, +1 supplémentaire de temps en temps
+            trapCount = 1;
+            if (Math.random() < 0.25 + diff * 0.25) trapCount++;
+        } else if (phase === 3) {
+            // Fin du jeu : 2 ou 3 pièges
+            trapCount = 2;
+            if (Math.random() < 0.4 + diff * 0.3) trapCount++;
+        }
+        
+        for (let i = 0; i < trapCount; i++) {
+            this.addSingleTrap(diff, phase, i);
+        }
+    }
+    
+    addSingleTrap(diff, phase, index) {
+        // Types de pièges selon la phase : on introduit les plus méchants très tard
+        let trapTypes;
+        if (phase === 1) {
+            // Uniquement les pièges montants lents
+            trapTypes = [1];
+        } else if (phase === 2) {
+            // + pièges tombants et latéraux
+            trapTypes = [0, 1, 2];
+        } else {
+            // En phase 3 on autorise tous les types (y compris plateformes piégées)
+            trapTypes = [0, 1, 2, 3];
+        }
+        const trapType = trapTypes[Math.floor(Math.random() * trapTypes.length)];
+        
+        // Vitesse de base très raisonnable
+        let baseSpeed;
+        if (phase === 1) baseSpeed = 1.5;
+        else if (phase === 2) baseSpeed = 2.5;
+        else baseSpeed = 3.5;
+        const speed = baseSpeed + diff * 2; // montée de vitesse douce
+        
+        switch(trapType) {
+            case 0: // Slow falling trap - visible warning
+                const fallX = 150 + Math.random() * (VIRTUAL_WIDTH - 300);
+                this.traps.push({
+                    x: fallX,
+                    y: -150,
+                    w: 35,
+                    h: 120,
+                    triggered: false,
+                    triggerX: fallX + 17,
+                    speed: speed,
+                    warningShown: false,
+                    action: function(p, t) {
+                        // Only trigger when player is close horizontally
+                        if (Math.abs(p.x + 20 - t.triggerX) < 80) {
+                            t.y += t.speed;
+                        }
+                        // Reset if missed
+                        if (t.y > 1000) {
+                            t.y = -150;
+                        }
+                    }
+                });
+                break;
+                
+            case 1: // Slow rising trap - gives time to react
+                const riseX = 100 + Math.random() * (VIRTUAL_WIDTH - 200);
+                const targetY = 400 + Math.random() * 300;
+                this.traps.push({
+                    x: riseX,
+                    y: VIRTUAL_HEIGHT + 50,
+                    w: 50,
+                    h: 80,
+                    triggered: false,
+                    triggerX: riseX + 25,
+                    targetY: targetY,
+                    speed: speed * 0.8,
+                    action: function(p, t) {
+                        // Rise slowly when player approaches
+                        if (p.x > t.triggerX - 120 && p.x < t.triggerX + 120 && t.y > t.targetY) {
+                            t.y -= t.speed;
+                        }
+                    }
+                });
+                break;
+                
+            case 2: // Side trap - slow and predictable
+                const fromLeft = index % 2 === 0;
+                const sideY = 300 + Math.random() * 400;
+                this.traps.push({
+                    x: fromLeft ? -150 : VIRTUAL_WIDTH + 50,
+                    y: sideY,
+                    w: 100,
+                    h: 25,
+                    triggered: false,
+                    triggerY: sideY,
+                    direction: fromLeft ? 1 : -1,
+                    speed: speed * 0.7,
+                    action: function(p, t) {
+                        // Only move when player is at similar height
+                        if (Math.abs(p.y - t.triggerY) < 150) {
+                            t.x += t.direction * t.speed;
+                        }
+                        // Reset after passing
+                        if ((t.direction > 0 && t.x > VIRTUAL_WIDTH + 100) || 
+                            (t.direction < 0 && t.x < -200)) {
+                            t.x = fromLeft ? -150 : VIRTUAL_WIDTH + 50;
+                        }
+                    }
+                });
+                break;
+                
+            case 3: // Shaky platform - gives warning before falling (seulement en phase 3)
+                if (this.platforms.length > 2 && phase >= 3) {
+                    // Only make non-essential platforms fake
+                    const safeIndices = [0]; // Ground is always safe
+                    const eligibleIndices = [];
+                    for (let i = 1; i < this.platforms.length; i++) {
+                        eligibleIndices.push(i);
+                    }
+                    
+                    if (eligibleIndices.length > 1) {
+                        // Pick a random platform that isn't the last one (near exit)
+                        const idx = eligibleIndices[Math.floor(Math.random() * (eligibleIndices.length - 1))];
+                        const plat = this.platforms[idx];
+                        
+                        plat.type = 'fake';
+                        plat.originalX = plat.x;
+                        plat.shakeTime = 0;
+                        plat.falling = false;
+                        plat.action = function(p, t) {
+                            // Only react when player is ON the platform
+                            if (p.x + 40 > t.x && p.x < t.x + t.w && 
+                                p.y + 50 >= t.y - 5 && p.y + 50 <= t.y + 10) {
+                                t.shakeTime += 0.016;
+                                
+                                // Shake for 1.5 seconds before falling (plenty of warning)
+                                if (t.shakeTime > 1.5) {
+                                    t.falling = true;
+                                } else {
+                                    // Visual shake warning
+                                    t.x = t.originalX + Math.sin(t.shakeTime * 40) * 4;
+                                }
+                            }
+                            
+                            if (t.falling) {
+                                t.y += 8;
+                            }
+                        };
+                    }
+                }
+                break;
+        }
+    }
+    
+    update(player, time) {
+        // Update moving platforms
+        this.movingPlatforms.forEach(mp => {
+            mp.x = mp.startX + Math.sin(time * mp.speed + mp.offset) * mp.range;
+        });
+        
+        // Update traps
+        this.traps.forEach(t => {
+            if (t.action) t.action(player, t);
+        });
+        
+        // Update fake platforms
+        this.platforms.forEach(p => {
+            if (p.action) p.action(player, p);
+        });
+    }
+}
+
+// --- MAIN GAME ---
+const game = {
+    state: 'START',
+    levelId: 1,
+    deaths: 0,
+    totalTime: 0,
+    particles: [],
+    ambientParticles: [],
+    shake: 0,
+    flash: 0,
+    flashColor: 'white',
+    time: 0,
+    ghosts: [],
+    demoMode: false,
+    lastInput: Date.now(),
+    highScores: [],
+    
+    player: {
+        x: 60, y: 800, w: 40, h: 50,
+        vx: 0, vy: 0,
+        speed: 7,        // Faster movement
+        jumpForce: -17,  // Slightly lower jump for more control
+        grounded: false,
+        scaleX: 1, scaleY: 1,
+        rotation: 0,
+        eyeOffset: 0,
+        coyoteTime: 0,   // Allows jumping shortly after leaving platform
+        jumpBuffer: 0    // Allows pressing jump slightly before landing
+    },
+    
+    input: { left: false, right: false, up: false },
+    
+    init() {
+        this.setupEvents();
+        this.loadScores();
+        this.resetLevel();
+        this.initAmbientParticles();
+        this.loop();
+    },
+    
+    initAmbientParticles() {
+        this.ambientParticles = [];
+        const theme = getThemeForLevel(this.levelId);
+        for (let i = 0; i < 30; i++) {
+            this.ambientParticles.push(new AmbientParticle(theme));
+        }
+    },
+    
+    setupEvents() {
+        const handle = (type, val) => {
+            AudioEngine.init();
+            this.lastInput = Date.now();
+            if (this.demoMode) this.stopDemo();
+            this.input[type] = val;
+        };
+        
+        window.addEventListener('keydown', e => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') handle('left', true);
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') handle('right', true);
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') { 
+                e.preventDefault();
+                handle('up', true);
+            }
+        });
+        
+        window.addEventListener('keyup', e => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') handle('left', false);
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') handle('right', false);
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') handle('up', false);
+        });
+        
+        let touchStartX = 0;
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.touches[0].clientX - rect.left) / rect.width;
+            const y = (e.touches[0].clientY - rect.top) / rect.height;
+            touchStartX = x;
+            
+            if (y < 0.7) {
+                handle('up', true);
+            } else {
+                if (x < 0.4) handle('left', true);
+                else if (x > 0.6) handle('right', true);
+                else handle('up', true);
+            }
+        });
+        
+        canvas.addEventListener('touchend', e => {
+            this.input.left = this.input.right = this.input.up = false;
+        });
+        
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+        });
+    },
+    
+    resetLevel() {
+        this.level = new Level(this.levelId);
+        this.player.x = this.level.spawn.x;
+        this.player.y = this.level.spawn.y;
+        this.player.vx = this.player.vy = 0;
+        this.player.rotation = 0;
+        this.ghosts = [];
+        
+        document.getElementById('level-display').innerText = `STAGE ${this.levelId.toString().padStart(2, '0')}`;
+        document.getElementById('theme-indicator').innerText = this.level.theme.name;
+        document.getElementById('progress-fill').style.width = `${(this.levelId / TOTAL_LEVELS) * 100}%`;
+        
+        // Update difficulty badge
+        const badge = document.getElementById('tutorial-badge');
+        if (this.levelId <= 20) {
+            badge.textContent = '✨ TUTORIAL - NO TRAPS';
+            badge.className = '';
+            badge.style.display = 'block';
+        } else if (this.levelId <= 45) {
+            badge.textContent = '🌱 EASY';
+            badge.className = 'difficulty-easy';
+            badge.style.display = 'block';
+        } else if (this.levelId <= 75) {
+            badge.textContent = '⚡ MEDIUM';
+            badge.className = 'difficulty-medium';
+            badge.style.display = 'block';
+        } else {
+            badge.textContent = '🔥 HARD';
+            badge.className = 'difficulty-hard';
+            badge.style.display = 'block';
+        }
+        
+        this.initAmbientParticles();
+    },
+    
+    showLevelTransition() {
+        const screen = document.getElementById('level-transition');
+        document.getElementById('transition-level').innerText = `STAGE ${this.levelId.toString().padStart(2, '0')}`;
+        document.getElementById('transition-theme').innerText = this.level.theme.name;
+        screen.classList.remove('hidden');
+        
+        setTimeout(() => {
+            screen.classList.add('hidden');
+        }, 1000);
+    },
+    
+    start() {
+        this.state = 'PLAYING';
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        this.levelId = 1;
+        this.deaths = 0;
+        this.totalTime = 0;
+        this.resetLevel();
+        this.showLevelTransition();
+    },
+    
+    die() {
+        this.deaths++;
+        this.shake = 25;
+        this.flash = 0.5;
+        this.flashColor = this.level.theme.trap;
+        AudioEngine.play('death');
+        
+        document.getElementById('death-display').innerText = `💀 ${this.deaths}`;
+        
+        // Death particles
+        for (let i = 0; i < 25; i++) {
+            this.particles.push(new Particle(
+                this.player.x + this.player.w/2,
+                this.player.y + this.player.h/2,
+                this.level.theme.player,
+                1.5
+            ));
+        }
+        
+        setTimeout(() => this.resetLevel(), 300);
+    },
+    
+    win() {
+        AudioEngine.play('win');
+        this.flash = 0.4;
+        this.flashColor = this.level.theme.exit;
+        
+        // Win particles
+        for (let i = 0; i < 30; i++) {
+            this.particles.push(new Particle(
+                this.level.exit.x + this.level.exit.w/2,
+                this.level.exit.y + this.level.exit.h/2,
+                this.level.theme.exit,
+                2
+            ));
+        }
+        
+        this.levelId++;
+        
+        if (this.levelId > TOTAL_LEVELS) {
+            setTimeout(() => this.gameOver(), 500);
+        } else {
+            setTimeout(() => {
+                this.resetLevel();
+                this.showLevelTransition();
+            }, 500);
+        }
+    },
+    
+    gameOver() {
+        this.state = 'GAMEOVER';
+        document.getElementById('gameover-screen').classList.remove('hidden');
+        document.getElementById('final-deaths').innerText = this.deaths;
+        
+        const mins = Math.floor(this.totalTime / 60);
+        const secs = Math.floor(this.totalTime % 60);
+        document.getElementById('final-time').innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+        
+        this.checkHighScore();
+    },
+    
+    update(dt) {
+        this.time += dt;
+        
+        // Update ambient particles
+        const theme = getThemeForLevel(this.levelId);
+        this.ambientParticles.forEach(p => p.update(dt, theme));
+        
+        if (this.state !== 'PLAYING') {
+            if (Date.now() - this.lastInput > 8000 && !this.demoMode && this.state === 'START') {
+                this.startDemo();
+            }
+            return;
+        }
+        
+        this.totalTime += dt;
+        
+        if (this.demoMode) this.updateAI();
+        
+        // Physics - smoother gravity
+        this.player.vy += 0.7; // Slightly lighter gravity for easier jumps
+        
+        // Terminal velocity - prevents falling too fast
+        if (this.player.vy > 15) this.player.vy = 15;
+        
+        // Input
+        if (this.input.left) {
+            this.player.vx = -this.player.speed;
+            this.player.eyeOffset = -3;
+        } else if (this.input.right) {
+            this.player.vx = this.player.speed;
+            this.player.eyeOffset = 3;
+        } else {
+            this.player.vx *= 0.85;
+            this.player.eyeOffset *= 0.9;
+        }
+        
+        // Apply velocity
+        this.player.x += this.player.vx;
+        this.player.y += this.player.vy;
+        
+        // Wall collision
+        if (this.player.x < 0) { this.player.x = 0; this.player.vx = 0; }
+        if (this.player.x > VIRTUAL_WIDTH - this.player.w) { 
+            this.player.x = VIRTUAL_WIDTH - this.player.w; 
+            this.player.vx = 0; 
+        }
+        
+        // Squash & Stretch
+        this.player.scaleX += (1 - this.player.scaleX) * 0.15;
+        this.player.scaleY += (1 - this.player.scaleY) * 0.15;
+        
+        // Rotation based on velocity
+        this.player.rotation += this.player.vx * 0.01;
+        this.player.rotation *= 0.95;
+        
+        // Ghost trail
+        if (Math.abs(this.player.vx) > 2 || Math.abs(this.player.vy) > 5) {
+            this.ghosts.push({ 
+                x: this.player.x, 
+                y: this.player.y, 
+                life: 0.4,
+                scaleX: this.player.scaleX,
+                scaleY: this.player.scaleY
+            });
+            if (this.ghosts.length > 6) this.ghosts.shift();
+        }
+        
+        // Update level
+        this.level.update(this.player, this.time);
+        
+        // Platform collision
+        let wasGrounded = this.player.grounded;
+        this.player.grounded = false;
+        
+        const allPlatforms = [...this.level.platforms, ...this.level.movingPlatforms];
+        
+        allPlatforms.forEach(obj => {
+            if (obj.y > VIRTUAL_HEIGHT + 100) return;
+            if (obj.type === 'fake' && obj.y > VIRTUAL_HEIGHT) return;
+            
+            if (this.checkCollision(this.player, obj)) {
+                this.resolveCollision(this.player, obj, wasGrounded);
+            }
+        });
+        
+        // Trap collision (hitbox légèrement réduite pour être plus permissive)
+        this.level.traps.forEach(trap => {
+            if (this.checkTrapCollision(this.player, trap)) {
+                this.die();
+            }
+        });
+        
+        // Coyote time - allows jumping shortly after leaving a platform
+        if (this.player.grounded) {
+            this.player.coyoteTime = 0.2; // 200ms grace period (un peu plus facile)
+        } else {
+            this.player.coyoteTime -= dt;
+        }
+        
+        // Jump buffer - remembers jump input for a short time
+        if (this.input.up) {
+            this.player.jumpBuffer = 0.15; // 150ms buffer (plus tolérant)
+        } else {
+            this.player.jumpBuffer -= dt;
+        }
+        
+        // Jump - with coyote time and jump buffer for better feel
+        const canJump = this.player.grounded || this.player.coyoteTime > 0;
+        const wantsToJump = this.input.up || this.player.jumpBuffer > 0;
+        
+        if (canJump && wantsToJump && this.player.vy >= 0) {
+            this.player.vy = this.player.jumpForce;
+            this.player.grounded = false;
+            this.player.coyoteTime = 0;
+            this.player.jumpBuffer = 0;
+            this.player.scaleX = 0.7;
+            this.player.scaleY = 1.4;
+            AudioEngine.play('jump');
+            
+            // Jump particles
+            for (let i = 0; i < 5; i++) {
+                this.particles.push(new Particle(
+                    this.player.x + this.player.w/2,
+                    this.player.y + this.player.h,
+                    this.level.theme.platform,
+                    0.5,
+                    3
+                ));
+            }
+        }
+        
+        // Fall death
+        if (this.player.y > VIRTUAL_HEIGHT + 50) {
+            this.die();
+        }
+        
+        // Exit check
+        if (this.checkCollision(this.player, this.level.exit)) {
+            this.win();
+        }
+        
+        // Update particles
+        this.particles = this.particles.filter(p => {
+            p.update(dt);
+            return p.life > 0;
+        });
+        
+        // Update ghosts
+        this.ghosts.forEach(g => g.life -= dt * 3);
+        this.ghosts = this.ghosts.filter(g => g.life > 0);
+        
+        // Decay effects
+        if (this.shake > 0) this.shake *= 0.9;
+        if (this.flash > 0) this.flash -= dt * 3;
+    },
+    
+    checkCollision(a, b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x &&
+               a.y < b.y + b.h && a.y + a.h > b.y;
+    },
+    
+    // Collision spécifique pour les pièges : on réduit un peu leur zone mortelle
+    checkTrapCollision(player, trap) {
+        const marginX = 6;
+        const marginY = 6;
+        const hitbox = {
+            x: trap.x + marginX,
+            y: trap.y + marginY,
+            w: Math.max(0, trap.w - marginX * 2),
+            h: Math.max(0, trap.h - marginY * 2)
+        };
+        return this.checkCollision(player, hitbox);
+    },
+    
+    resolveCollision(player, obj, wasGrounded) {
+        const overlapX = Math.min(player.x + player.w - obj.x, obj.x + obj.w - player.x);
+        const overlapY = Math.min(player.y + player.h - obj.y, obj.y + obj.h - player.y);
+        
+        if (overlapX < overlapY) {
+            if (player.x < obj.x) {
+                player.x -= overlapX;
+            } else {
+                player.x += overlapX;
+            }
+            player.vx = 0;
+        } else {
+            if (player.vy > 0 && player.y < obj.y) {
+                player.y = obj.y - player.h;
+                player.vy = 0;
+                player.grounded = true;
+                
+                if (!wasGrounded) {
+                    player.scaleX = 1.3;
+                    player.scaleY = 0.7;
+                }
+            } else if (player.vy < 0) {
+                player.y = obj.y + obj.h;
+                player.vy = 0;
+            }
+        }
+    },
+    
+    draw() {
+        const theme = this.level ? this.level.theme : THEMES.neonCity;
+        
+        ctx.save();
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        
+        // Camera shake
+        if (this.shake > 0.5) {
+            ctx.translate(
+                (Math.random() - 0.5) * this.shake,
+                (Math.random() - 0.5) * this.shake
+            );
+        }
+        
+        ctx.scale(SCALE, SCALE);
+        
+        // Background gradient
+        const gradient = ctx.createLinearGradient(0, 0, 0, VIRTUAL_HEIGHT);
+        gradient.addColorStop(0, theme.bg1);
+        gradient.addColorStop(1, theme.bg2);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+        
+        // Grid effect
+        ctx.strokeStyle = theme.gridColor;
+        ctx.lineWidth = 1;
+        const gridOffset = (this.time * 30) % 60;
+        
+        for (let x = 0; x < VIRTUAL_WIDTH; x += 60) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, VIRTUAL_HEIGHT);
+            ctx.stroke();
+        }
+        
+        for (let y = gridOffset; y < VIRTUAL_HEIGHT; y += 60) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(VIRTUAL_WIDTH, y);
+            ctx.stroke();
+        }
+        
+        // Ambient particles
+        this.ambientParticles.forEach(p => p.draw(ctx));
+        
+        if (this.level) {
+            // Draw platforms
+            ctx.shadowBlur = 20;
+            
+            [...this.level.platforms, ...this.level.movingPlatforms].forEach(p => {
+                if (p.y > VIRTUAL_HEIGHT + 50) return;
+                
+                const isFake = p.type === 'fake';
+                const color = isFake ? theme.trap : theme.platform;
+                
+                ctx.shadowColor = isFake ? theme.trapGlow : theme.platformGlow;
+                
+                // Platform body
+                const grad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
+                grad.addColorStop(0, color);
+                grad.addColorStop(1, this.adjustColor(color, -30));
+                ctx.fillStyle = grad;
+                
+                this.roundRect(ctx, p.x, p.y, p.w, p.h, 5);
+                ctx.fill();
+                
+                // Highlight
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 2;
+                this.roundRect(ctx, p.x, p.y, p.w, p.h, 5);
+                ctx.stroke();
+            });
+            
+            // Draw traps
+            ctx.shadowColor = theme.trapGlow;
+            this.level.traps.forEach(t => {
+                if (t.y > VIRTUAL_HEIGHT + 100 || t.y + t.h < -100) return;
+                
+                ctx.fillStyle = theme.trap;
+                
+                // Spiky appearance
+                ctx.beginPath();
+                const spikes = Math.floor(t.w / 15);
+                for (let i = 0; i <= spikes; i++) {
+                    const x = t.x + (i / spikes) * t.w;
+                    const y = i % 2 === 0 ? t.y : t.y + 10;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.lineTo(t.x + t.w, t.y + t.h);
+                ctx.lineTo(t.x, t.y + t.h);
+                ctx.closePath();
+                ctx.fill();
+            });
+            
+            // Draw exit portal
+            const exitPulse = Math.sin(this.time * 4) * 8;
+            ctx.shadowColor = theme.exit;
+            ctx.shadowBlur = 30 + exitPulse;
+            
+            // Portal glow
+            const portalGrad = ctx.createRadialGradient(
+                this.level.exit.x + this.level.exit.w/2,
+                this.level.exit.y + this.level.exit.h/2,
+                0,
+                this.level.exit.x + this.level.exit.w/2,
+                this.level.exit.y + this.level.exit.h/2,
+                50 + exitPulse
+            );
+            portalGrad.addColorStop(0, theme.exit);
+            portalGrad.addColorStop(0.5, this.adjustColor(theme.exit, -50) + '88');
+            portalGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = portalGrad;
+            ctx.fillRect(
+                this.level.exit.x - 20, 
+                this.level.exit.y - 20,
+                this.level.exit.w + 40,
+                this.level.exit.h + 40
+            );
+            
+            // Portal core
+            ctx.fillStyle = theme.exit;
+            this.roundRect(ctx, 
+                this.level.exit.x - exitPulse/4, 
+                this.level.exit.y - exitPulse/4,
+                this.level.exit.w + exitPulse/2,
+                this.level.exit.h + exitPulse/2,
+                10
+            );
+            ctx.fill();
+            
+            // Draw ghosts
+            this.ghosts.forEach(g => {
+                ctx.globalAlpha = g.life * 0.5;
+                ctx.fillStyle = theme.player;
+                ctx.save();
+                ctx.translate(g.x + this.player.w/2, g.y + this.player.h);
+                ctx.scale(g.scaleX, g.scaleY);
+                this.roundRect(ctx, -this.player.w/2, -this.player.h, this.player.w, this.player.h, 8);
+                ctx.fill();
+                ctx.restore();
+            });
+            ctx.globalAlpha = 1;
+            
+            // Draw player
+            ctx.save();
+            ctx.translate(this.player.x + this.player.w/2, this.player.y + this.player.h);
+            ctx.rotate(this.player.rotation);
+            ctx.scale(this.player.scaleX, this.player.scaleY);
+            
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = theme.player;
+            
+            // Body
+            const playerGrad = ctx.createLinearGradient(0, -this.player.h, 0, 0);
+            playerGrad.addColorStop(0, theme.player);
+            playerGrad.addColorStop(1, this.adjustColor(theme.player, -40));
+            ctx.fillStyle = playerGrad;
+            this.roundRect(ctx, -this.player.w/2, -this.player.h, this.player.w, this.player.h, 10);
+            ctx.fill();
+            
+            // Eyes
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'white';
+            const eyeY = -this.player.h * 0.65;
+            const eyeSize = 8;
+            ctx.beginPath();
+            ctx.arc(-8 + this.player.eyeOffset, eyeY, eyeSize, 0, Math.PI * 2);
+            ctx.arc(8 + this.player.eyeOffset, eyeY, eyeSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Pupils
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(-6 + this.player.eyeOffset * 1.5, eyeY, 4, 0, Math.PI * 2);
+            ctx.arc(10 + this.player.eyeOffset * 1.5, eyeY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // Draw particles
+        this.particles.forEach(p => p.draw(ctx));
+        
+        ctx.restore();
+        
+        // Flash effect
+        if (this.flash > 0) {
+            ctx.fillStyle = this.flashColor + Math.floor(this.flash * 100).toString(16).padStart(2, '0');
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        }
+    },
+    
+    roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    },
+    
+    adjustColor(hex, amount) {
+        const num = parseInt(hex.replace('#', ''), 16);
+        const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+        const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+        const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+        return '#' + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+    },
+    
+    loop() {
+        const now = performance.now();
+        const dt = Math.min((now - (this.lastFrame || now)) / 1000, 0.05);
+        this.lastFrame = now;
+        
+        this.update(dt);
+        this.draw();
+        
+        requestAnimationFrame(() => this.loop());
+    },
+    
+    startDemo() {
+        this.demoMode = true;
+        this.state = 'PLAYING';
+        this.levelId = 1;
+        this.resetLevel();
+        document.getElementById('demo-indicator').classList.remove('hidden');
+        document.getElementById('start-screen').classList.add('hidden');
+    },
+    
+    stopDemo() {
+        this.demoMode = false;
+        this.state = 'START';
+        document.getElementById('demo-indicator').classList.add('hidden');
+        document.getElementById('start-screen').classList.remove('hidden');
+        this.resetLevel();
+    },
+    
+    updateAI() {
+        const targetX = this.level.exit.x;
+        const targetY = this.level.exit.y;
+        
+        // Simple pathfinding
+        if (this.player.x < targetX - 20) {
+            this.input.right = true;
+            this.input.left = false;
+        } else if (this.player.x > targetX + 20) {
+            this.input.left = true;
+            this.input.right = false;
+        } else {
+            this.input.left = this.input.right = false;
+        }
+        
+        // Jump when needed
+        if (this.player.grounded && (this.player.y > targetY + 50 || Math.random() < 0.05)) {
+            this.input.up = true;
+            setTimeout(() => this.input.up = false, 100);
+        }
+        
+        // Avoid getting stuck
+        if (Math.random() < 0.01) {
+            this.input.up = true;
+            setTimeout(() => this.input.up = false, 100);
+        }
+    },
+    
+    loadScores() {
+        this.highScores = JSON.parse(localStorage.getItem('levelDevilScores')) || [];
+        this.updateScoreDisplay();
+    },
+    
+    updateScoreDisplay() {
+        const list = document.getElementById('score-list');
+        list.innerHTML = this.highScores
+            .slice(0, 5)
+            .map((s, i) => `<li>${['🥇','🥈','🥉','4️⃣','5️⃣'][i]} ${s.name} - ${s.deaths} deaths</li>`)
+            .join('');
+    },
+    
+    checkHighScore() {
+        if (this.highScores.length < 5 || this.deaths < this.highScores[this.highScores.length - 1].deaths) {
+            document.getElementById('score-input-screen').classList.remove('hidden');
+            document.getElementById('gameover-screen').classList.add('hidden');
+        }
+    },
+    
+    saveScore() {
+        const name = document.getElementById('player-name').value.toUpperCase() || 'PLAYER';
+        this.highScores.push({ name, deaths: this.deaths });
+        this.highScores.sort((a, b) => a.deaths - b.deaths);
+        this.highScores = this.highScores.slice(0, 5);
+        localStorage.setItem('levelDevilScores', JSON.stringify(this.highScores));
+        
+        this.updateScoreDisplay();
+        this.state = 'START';
+        document.getElementById('start-screen').classList.remove('hidden');
+        document.getElementById('score-input-screen').classList.add('hidden');
+    },
+    
+    reset() {
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        this.start();
+    }
+};
+
+// Initialize
+window.onload = () => {
+    game.lastInput = Date.now();
+    game.init();
+};
+</script>
+</body>
 </html>
